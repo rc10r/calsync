@@ -1,5 +1,5 @@
 import { CalendarClient } from "./calendar-client";
-import { CalDavDescriptor, LOG_DETAIL } from "../config";
+import { CalDavDescriptor } from "../config";
 import { CalendarEvent } from "./calendar-event";
 
 export async function listEvents(
