@@ -11,9 +11,8 @@
   "author": "Romain Champourlier",
   "scripts": {
     "build": "tsc",
-    "dev": "ts-node ./src/app.ts",
-    "app:dev": "yarn build && node --trace-warnings ./dist/app.js",
-    "app": "node --trace-warnings ./dist/app.js",
+    "run:dev": "yarn build && node --trace-warnings ./dist/app.js",
+    "run:prod": "node --trace-warnings ./dist/app.js",
     "test": "jest --watch"
   },
   "dependencies": {

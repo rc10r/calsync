@@ -20,4 +20,4 @@ COPY . .
 RUN npm run build
 
 # Run the app
-CMD ["npm", "run", "app"]
+CMD ["npm", "run", "run:prod"]

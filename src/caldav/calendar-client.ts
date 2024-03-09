@@ -1,17 +1,19 @@
-import { CalDAVService } from './caldav.service';
-import { CalendarEvent } from './calendar-event';
+import { CalDAVService } from "./caldav.service";
+import { CalendarEvent } from "./calendar-event";
 
 export class CalendarClient {
   private calDAVService: CalDAVService = CalDAVService.getInstance();
   /**
-   * 
+   *
    * @param calendarUrl - CalDAV Calendar URL
    * @param username - CalDAV Username
    * @param  password - CalDAV password
    */
-  constructor(private calendarUrl: string, private username: string, private password) {
-
-  }
+  constructor(
+    private calendarUrl: string,
+    private username: string,
+    private password
+  ) {}
 
   /**
    * Get
@@ -19,7 +21,11 @@ export class CalendarClient {
    * 2. `ctag` - This ctag works like a change id. Every time the ctag has changed, you know something in the calendar has changed too.
    */
   public getCalendarInformation() {
-    return this.calDAVService.getCalendarInformation(this.calendarUrl, this.username, this.password)
+    return this.calDAVService.getCalendarInformation(
+      this.calendarUrl,
+      this.username,
+      this.password
+    );
   }
 
   /**
@@ -27,7 +33,13 @@ export class CalendarClient {
    * if you don't enter a endDate, if will return all events from `startDate`.
    */
   public getEvents(startDate: Date, endDate?: Date): Promise<CalendarEvent[]> {
-    return this.calDAVService.getEvents(this.calendarUrl, this.username, this.password, startDate, endDate);
+    return this.calDAVService.getEvents(
+      this.calendarUrl,
+      this.username,
+      this.password,
+      startDate,
+      endDate
+    );
   }
 
   /**
@@ -36,7 +48,12 @@ export class CalendarClient {
    * @param event - the event you want to add or update.
    */
   public addOrUpdateEvent(event: CalendarEvent) {
-    return this.calDAVService.addEvent(this.calendarUrl, this.username, this.password, event);
+    return this.calDAVService.addEvent(
+      this.calendarUrl,
+      this.username,
+      this.password,
+      event
+    );
   }
 
   /**
@@ -44,6 +61,11 @@ export class CalendarClient {
    * @param event - the event you want to remove.
    */
   public removeEvent(event: CalendarEvent) {
-    return this.calDAVService.removeEvent(this.calendarUrl, this.username, this.password, event);
+    return this.calDAVService.removeEvent(
+      this.calendarUrl,
+      this.username,
+      this.password,
+      event
+    );
   }
 }

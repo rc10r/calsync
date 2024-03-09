@@ -6,3 +6,4 @@
 /credentials.json
 /token[s].json
 **.DS_Store
+/src/repl/config*
