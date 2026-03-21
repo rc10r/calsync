@@ -47,38 +47,38 @@ Google OAuth credentials go in `credentials.json` (gitignored). Tokens are store
 ## Development
 
 ```bash
-npm install              # Install dependencies
-npm run build            # TypeScript compilation → dist/
-npm run dev              # Run with ts-node (development)
-npm test                 # Run tests (jest)
-npm run lint             # ESLint check
-npm run lint:fix         # ESLint auto-fix
-npm run format           # Prettier formatting
-npm run typecheck        # TypeScript type checking (no emit)
+bun install              # Install dependencies
+bun run build            # TypeScript compilation → dist/
+bun run dev              # Run directly with Bun (development)
+bun test                 # Run tests (bun:test)
+bun run lint             # Biome lint + format check
+bun run lint:fix         # Biome auto-fix
+bun run format           # Biome formatting
+bun run typecheck        # TypeScript type checking (no emit)
 ```
 
 ## Testing
 
-Tests use Jest with ts-jest. Test files are co-located with source (`*.test.ts`). Fixtures in `src/testSupport/fixtures.ts` provide CalDAV iCal strings parsed by `CalDAVService.parseToCalendarEvent()` and GCal JSON objects.
+Tests use Bun's built-in test runner (`bun:test`). Test files are co-located with source (`*.test.ts`). Fixtures in `src/testSupport/fixtures.ts` provide CalDAV iCal strings parsed by `CalDAVService.parseToCalendarEvent()` and GCal JSON objects.
 
 Run tests before committing:
 ```bash
-npm test
+bun test
 ```
 
 ## Code Style
 
 - TypeScript with strict settings
-- ESLint (flat config) + Prettier for formatting
+- Biome for linting and formatting (replaces ESLint + Prettier)
 - Prefer `node:` prefix for Node.js built-in imports
 - Use `import type` for type-only imports where possible
 
 ## CI/CD
 
 GitHub Actions runs on push/PR to `main`:
-- Lint check
+- Biome lint check
 - Type check
-- Tests
+- Tests (bun:test)
 
 ## Important Notes
 
@@ -86,3 +86,4 @@ GitHub Actions runs on push/PR to `main`:
 - The CalDAV service uses `rejectUnauthorized` controlled by `NODE_TLS_REJECT_UNAUTHORIZED` env var (defaults to validating certificates)
 - Google API calls are throttled to 200ms per call (10 req/sec limit)
 - The sync algorithm only deletes target events that have the calsync fingerprint (safe deletion)
+- Runtime: Bun (also compatible with Node.js >= 20 for production via `dist/`)

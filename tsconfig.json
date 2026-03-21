@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "module": "commonjs",
-    "lib": ["ES2020"],
+    "lib": ["ES2022"],
+    "types": ["bun-types"],
     "sourceMap": true,
     "outDir": "dist",
     "rootDir": "src",

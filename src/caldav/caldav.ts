@@ -1,17 +1,13 @@
+import type { CalDavDescriptor } from "../config";
 import { CalendarClient } from "./calendar-client";
-import { CalDavDescriptor } from "../config";
-import { CalendarEvent } from "./calendar-event";
+import type { CalendarEvent } from "./calendar-event";
 
 export async function listEvents(
   calDesc: CalDavDescriptor,
   start: Date,
-  end: Date
+  end: Date,
 ): Promise<CalendarEvent[]> {
-  const calendarClient = new CalendarClient(
-    calDesc.url,
-    calDesc.username,
-    calDesc.password
-  );
+  const calendarClient = new CalendarClient(calDesc.url, calDesc.username, calDesc.password);
   const calendarEvents = await calendarClient.getEvents(start, end);
   return calendarEvents;
 }

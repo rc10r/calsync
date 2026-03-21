@@ -1,10 +1,10 @@
 import * as fs from "node:fs";
-import * as config from "./config";
 import * as caldav from "./caldav/caldav";
+import * as config from "./config";
+import { type CalDAVEvent, type CalendarEvent, isCalDAVEvent } from "./events";
 import * as gcal from "./gcal/gcal";
-import * as sync from "./sync";
 import { log, logWithEventData } from "./log";
-import { type CalendarEvent, isCalDAVEvent, type CalDAVEvent } from "./events";
+import * as sync from "./sync";
 
 const WRITE_TO_FILE = process.env.WRITE_TO_FILE === "true";
 const CLEAN_TARGET = false;
@@ -40,7 +40,6 @@ async function main() {
           });
         }
         const it = event.recurrenceIterator;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let nextOccurrence: any;
         nextOccurrence = it.next();
         while (nextOccurrence) {
@@ -77,13 +76,11 @@ async function main() {
       });
     }
   }
-  if (WRITE_TO_FILE)
-    fs.writeFileSync("./data/sourcesEvents.json", JSON.stringify(sourcesEvents));
+  if (WRITE_TO_FILE) fs.writeFileSync("./data/sourcesEvents.json", JSON.stringify(sourcesEvents));
 
   if (config.target.kind === "GCal") {
     const targetEvents = await gcal.listEvents(config.target, start, end);
-    if (WRITE_TO_FILE)
-      fs.writeFileSync("./data/targetEvents.json", JSON.stringify(targetEvents));
+    if (WRITE_TO_FILE) fs.writeFileSync("./data/targetEvents.json", JSON.stringify(targetEvents));
     const instructions: sync.SyncToGCalInstructions = sync.toGCal(sourcesEvents, targetEvents);
 
     log(

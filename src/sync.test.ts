@@ -1,47 +1,40 @@
+import { describe, expect, test } from "bun:test";
+import { calsyncFingerprint } from "./config";
 import {
-  CalendarEvent,
-  CalendarEventData,
+  type CalendarEvent,
+  type CalendarEventData,
+  type GCalEvent,
   eventDataToGCalEvent,
   extractCalDAVEventData,
   extractGCalEventData,
-  GCalEvent,
   isCalDAVEvent,
   isGCalEvent,
 } from "./events";
 import * as sync from "./sync";
 import * as fixtures from "./testSupport/fixtures";
-import { calsyncFingerprint } from "./config";
 
 function mapEventToDataWithDescription(evt: CalendarEvent): CalendarEventData {
   const result = (() => {
-    if (isGCalEvent(evt))
-      return { eventData: extractGCalEventData(evt), srcId: evt.id };
-    if (isCalDAVEvent(evt))
-      return { eventData: extractCalDAVEventData(evt), srcId: evt.uid };
+    if (isGCalEvent(evt)) return { eventData: extractGCalEventData(evt), srcId: evt.id };
+    if (isCalDAVEvent(evt)) return { eventData: extractCalDAVEventData(evt), srcId: evt.uid };
     throw new Error("Unexpected event type");
   })();
   // Mimic sync.ts behavior: prepend existing description
-  result.eventData.description =
-    (result.eventData.description || "") +
-    `\nOriginal ID: ${result.srcId}\n${calsyncFingerprint}`;
+  result.eventData.description = `${result.eventData.description || ""}\nOriginal ID: ${result.srcId}\n${calsyncFingerprint}`;
   return result.eventData;
 }
 
 function mapEventToTargetEvent(evt: CalendarEvent): GCalEvent {
   const result = (() => {
-    if (isGCalEvent(evt))
-      return { eventData: extractGCalEventData(evt), srcId: evt.id };
-    if (isCalDAVEvent(evt))
-      return { eventData: extractCalDAVEventData(evt), srcId: evt.uid };
+    if (isGCalEvent(evt)) return { eventData: extractGCalEventData(evt), srcId: evt.id };
+    if (isCalDAVEvent(evt)) return { eventData: extractCalDAVEventData(evt), srcId: evt.uid };
     throw new Error("Unexpected evt type not recognized");
   })();
 
   const newEvt = eventDataToGCalEvent(result.eventData);
   newEvt.id = result.srcId;
   // Mimic sync.ts behavior: prepend existing description
-  newEvt.description =
-    (result.eventData.description || "") +
-    `\nOriginal ID: ${result.srcId}\n${calsyncFingerprint}`;
+  newEvt.description = `${result.eventData.description || ""}\nOriginal ID: ${result.srcId}\n${calsyncFingerprint}`;
   return newEvt;
 }
 
@@ -103,14 +96,13 @@ describe("ToGCal", () => {
 
   test("empty sources and non-empty target", () => {
     const sourcesEvents: { event: CalendarEvent; redactedSummary: string | undefined }[] = [];
-    const targetEvents = [
-      fixtures.GetGCal("common"),
-      fixtures.GetCalDAV("nonTransparent"),
-    ].map((e) => mapEventToTargetEvent(e));
+    const targetEvents = [fixtures.GetGCal("common"), fixtures.GetCalDAV("nonTransparent")].map(
+      (e) => mapEventToTargetEvent(e),
+    );
     expect(sync.toGCal(sourcesEvents, targetEvents)).toStrictEqual({
       insert: [],
       update: [],
-      delete: targetEvents.map((e) => e.id),
+      delete: targetEvents.map((e) => e.id!),
     });
   });
 
@@ -170,8 +162,8 @@ describe("ToGCal", () => {
     ];
 
     const updateEvtData = mapEventToDataWithDescription(updatedGCalEvent);
-    updateEvtData.start.dateTime = updatedGCalEvent.start!.dateTime!;
-    updateEvtData.end.dateTime = updatedGCalEvent.end!.dateTime!;
+    updateEvtData.start.dateTime = updatedGCalEvent.start?.dateTime!;
+    updateEvtData.end.dateTime = updatedGCalEvent.end?.dateTime!;
     updateEvtData.summary = updatedGCalEvent.summary!;
 
     expect(sync.toGCal(sourcesEvents, targetEvents)).toStrictEqual({
@@ -263,7 +255,7 @@ describe("ToGCal", () => {
     const sourcesEvents: { event: CalendarEvent; redactedSummary: string | undefined }[] = [];
     const targetEvent = fixtures.GetGCal("common");
     const targetEvents = [targetEvent].map((e) => mapEventToTargetEvent(e));
-    targetEvents[0]["description"] = "This event should simply be ignored";
+    targetEvents[0].description = "This event should simply be ignored";
 
     expect(sync.toGCal(sourcesEvents, targetEvents)).toStrictEqual({
       insert: [],

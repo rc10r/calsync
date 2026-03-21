@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import readline from "node:readline";
-import { calendar_v3, google, Auth } from "googleapis";
-import { GCalDescriptor, LOG_DETAIL } from "../config";
-import { CalendarEventData } from "../events";
+import { type Auth, type calendar_v3, google } from "googleapis";
+import { type GCalDescriptor, LOG_DETAIL } from "../config";
+import type { CalendarEventData } from "../events";
 import { log, logWithGCalEvent } from "../log";
 
 // If modifying these scopes, delete token.json.
@@ -43,10 +43,7 @@ export async function deleteEventsByIds(gcal: GCalDescriptor, eventIds: string[]
   await _deleteEventsByIds(auth, gcal.id, eventIds);
 }
 
-export async function insertEvents(
-  gcal: GCalDescriptor,
-  events: Array<calendar_v3.Schema$Event>,
-) {
+export async function insertEvents(gcal: GCalDescriptor, events: Array<calendar_v3.Schema$Event>) {
   const auth = await getAuthenticatedClient(gcal.id);
   await _insertEvents(auth, gcal.id, events);
 }
@@ -74,10 +71,9 @@ async function getAuthenticatedClient(
   const matchingToken = tokens[gcalAccountId];
   if (!matchingToken) {
     return await getAccessToken(gcalAccountId, oAuth2Client);
-  } else {
-    oAuth2Client.setCredentials(matchingToken);
-    return oAuth2Client;
   }
+  oAuth2Client.setCredentials(matchingToken);
+  return oAuth2Client;
 }
 
 /**
@@ -139,7 +135,7 @@ async function _insertEvents(
       requestBody: evt,
     });
     if (LOG_DETAIL) {
-      logWithGCalEvent(`Inserted`, evt);
+      logWithGCalEvent("Inserted", evt);
     }
   }
 }
@@ -169,12 +165,7 @@ async function _updateEvents(
 /**
  * Deletes all upcoming events on the specified calendar.
  */
-async function _deleteEvents(
-  auth: Auth.OAuth2Client,
-  calendarId: string,
-  start: Date,
-  end: Date,
-) {
+async function _deleteEvents(auth: Auth.OAuth2Client, calendarId: string, start: Date, end: Date) {
   const calendar = google.calendar({ version: "v3", auth });
   const events = await _listEvents(auth, calendarId, start, end);
 
@@ -196,11 +187,7 @@ async function _deleteEvents(
   }
 }
 
-async function _deleteEventsByIds(
-  auth: Auth.OAuth2Client,
-  calendarId: string,
-  eventIds: string[],
-) {
+async function _deleteEventsByIds(auth: Auth.OAuth2Client, calendarId: string, eventIds: string[]) {
   const calendar = google.calendar({ version: "v3", auth });
 
   for (const evtId of eventIds) {
@@ -229,7 +216,7 @@ async function _listEvents(
   nextPageToken?: string,
 ): Promise<calendar_v3.Schema$Event[]> {
   const calendar = google.calendar({ version: "v3", auth });
-  if (!allEvents) allEvents = [];
+  const events = allEvents ?? [];
 
   const res = await calendar.events.list({
     calendarId: calendarId,
@@ -240,18 +227,17 @@ async function _listEvents(
     pageToken: nextPageToken,
   });
   if (res.data.items) {
-    res.data.items.forEach((i) => allEvents!.push(i));
+    res.data.items.forEach((i) => events.push(i));
   }
   if (res.data.nextPageToken) {
-    return _listEvents(auth, calendarId, start, end, allEvents, res.data.nextPageToken);
+    return _listEvents(auth, calendarId, start, end, events, res.data.nextPageToken);
   }
-  return allEvents;
+  return events;
 }
 
 /**
  * Returns the data from the credentials.json file.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCredentialsData(): any {
   const credentialsData = JSON.parse(fs.readFileSync("credentials.json").toString());
   return credentialsData;

@@ -1,6 +1,6 @@
-import { calendar_v3 } from "googleapis";
-import { CalendarEvent } from "./caldav/calendar-event";
-import { CalendarEventData } from "./events";
+import type { calendar_v3 } from "googleapis";
+import type { CalendarEvent } from "./caldav/calendar-event";
+import type { CalendarEventData } from "./events";
 
 const Version = "1.5.0";
 
@@ -8,7 +8,6 @@ function prefix(): string {
   return `v${Version} -- ${new Date().toISOString()} -- `;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function log(msg: string, ...args: any[]) {
   if (args.length > 0) console.log(`${prefix()}${msg}`, ...args);
   else console.log(`${prefix()}${msg}`);

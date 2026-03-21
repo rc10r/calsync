@@ -1,17 +1,19 @@
-import { CalDAVService } from './caldav.service';
-import { CalendarEvent } from './calendar-event';
+import { CalDAVService } from "./caldav.service";
+import type { CalendarEvent } from "./calendar-event";
 
 export class CalendarClient {
   private calDAVService: CalDAVService = CalDAVService.getInstance();
   /**
-   * 
+   *
    * @param calendarUrl - CalDAV Calendar URL
    * @param username - CalDAV Username
    * @param  password - CalDAV password
    */
-  constructor(private calendarUrl: string, private username: string, private password: string) {
-
-  }
+  constructor(
+    private calendarUrl: string,
+    private username: string,
+    private password: string,
+  ) {}
 
   /**
    * Get
@@ -19,7 +21,11 @@ export class CalendarClient {
    * 2. `ctag` - This ctag works like a change id. Every time the ctag has changed, you know something in the calendar has changed too.
    */
   public getCalendarInformation() {
-    return this.calDAVService.getCalendarInformation(this.calendarUrl, this.username, this.password)
+    return this.calDAVService.getCalendarInformation(
+      this.calendarUrl,
+      this.username,
+      this.password,
+    );
   }
 
   /**
@@ -27,7 +33,13 @@ export class CalendarClient {
    * if you don't enter a endDate, if will return all events from `startDate`.
    */
   public async getEvents(startDate: Date, endDate?: Date): Promise<CalendarEvent[]> {
-    const result = await this.calDAVService.getEvents(this.calendarUrl, this.username, this.password, startDate, endDate);
+    const result = await this.calDAVService.getEvents(
+      this.calendarUrl,
+      this.username,
+      this.password,
+      startDate,
+      endDate,
+    );
     return result as CalendarEvent[];
   }
 

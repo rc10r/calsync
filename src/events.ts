@@ -3,8 +3,8 @@
  * and vice-versa.
  */
 
-import { calendar_v3 } from "googleapis";
-import { CalendarEvent as CalDAVCalendarEvent } from "./caldav/calendar-event";
+import type { calendar_v3 } from "googleapis";
+import type { CalendarEvent as CalDAVCalendarEvent } from "./caldav/calendar-event";
 
 export type CalDAVEvent = CalDAVCalendarEvent;
 export type GCalEvent = calendar_v3.Schema$Event;
@@ -17,9 +17,7 @@ export type CalendarEventData = {
   transparency?: string;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isCalDAVEvent = (e: any): e is CalDAVEvent => !!e.uid;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isGCalEvent = (e: any): e is GCalEvent => !!e.id;
 
 function formatDate(date: Date): string {
@@ -78,10 +76,7 @@ export function eventDataToGCalEvent(d: CalendarEventData): GCalEvent {
   return newEvt;
 }
 
-export function compareEventsData(
-  evtA: CalendarEventData,
-  evtB: CalendarEventData,
-): boolean {
+export function compareEventsData(evtA: CalendarEventData, evtB: CalendarEventData): boolean {
   if (evtA.summary !== evtB.summary) return false;
   if (evtA.start.date && !evtB.start.date) return false;
   if (evtA.start.date !== evtB.start.date) return false;

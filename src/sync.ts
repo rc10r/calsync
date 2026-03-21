@@ -1,15 +1,15 @@
+import { calsyncFingerprint } from "./config";
 import {
-  CalendarEvent,
-  CalendarEventData,
+  type CalendarEvent,
+  type CalendarEventData,
+  type GCalEvent,
   compareEventsData,
   extractEventData,
   extractGCalEventData,
-  GCalEvent,
   isCalDAVEvent,
   isGCalEvent,
 } from "./events";
 import { NewSummary, ShouldCopy } from "./rules";
-import { calsyncFingerprint } from "./config";
 
 export type SyncToGCalInstructions = {
   insert: CalendarEventData[];
@@ -47,15 +47,12 @@ export function toGCal(
     // Search matching event in targetEvents
     const matchingTargetEvt = (() => {
       for (const targetEvt of targetEvents) {
-        if (targetEvt.description && targetEvt.description.includes(matchingId))
-          return targetEvt;
+        if (targetEvt.description?.includes(matchingId)) return targetEvt;
       }
       return undefined;
     })();
 
-    srcEvtData.description =
-      (srcEvtData.description || "") +
-      `\nOriginal ID: ${matchingId}\n${calsyncFingerprint}`;
+    srcEvtData.description = `${srcEvtData.description || ""}\nOriginal ID: ${matchingId}\n${calsyncFingerprint}`;
 
     // Ignoring events not to be copied
     if (
@@ -88,8 +85,7 @@ export function toGCal(
   for (const targetEvt of targetEvents) {
     const targetId = targetEvt.id ?? "";
     if (
-      targetEvt.description &&
-      targetEvt.description.includes(calsyncFingerprint) &&
+      targetEvt.description?.includes(calsyncFingerprint) &&
       !markedTargetEventIds.includes(targetId)
     ) {
       // Deleting events which have the calsync fingerprint and have

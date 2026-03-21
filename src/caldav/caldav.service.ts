@@ -1,9 +1,9 @@
-import https from "https";
+import https from "node:https";
 import * as xml2js from "xml2js";
 const parseString = xml2js.parseString;
 import ICAL from "ical.js";
-import { CalendarEvent } from "./calendar-event";
-import { CalendarEventDuration } from "./calendar-event-duration";
+import type { CalendarEvent } from "./calendar-event";
+import type { CalendarEventDuration } from "./calendar-event-duration";
 
 function formatUtcDate(date: Date): string {
   const y = date.getUTCFullYear();
@@ -38,7 +38,7 @@ export class CalDAVService {
   private constructor() {}
 
   public static getInstance() {
-    return this.singelton;
+    return CalDAVService.singelton;
   }
 
   addEvent(calendarUrl: string, username: string, password: string, event: CalendarEvent) {
@@ -63,20 +63,7 @@ export class CalDAVService {
     const endDateString = endDate ? formatUtcDate(endDate) : null;
     const endTimeRange = endDateString ? ` end="${endDateString}"` : "";
 
-    const xml =
-      '<?xml version="1.0" encoding="utf-8" ?>\n' +
-      '<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">\n' +
-      "  <D:prop>\n" +
-      "    <C:calendar-data/>\n" +
-      "  </D:prop>\n" +
-      "  <C:filter>\n" +
-      '    <C:comp-filter name="VCALENDAR">\n' +
-      '      <C:comp-filter name="VEVENT">\n' +
-      `        <C:time-range start="${startDateString}"${endTimeRange}/>\n` +
-      "      </C:comp-filter>\n" +
-      "    </C:comp-filter>\n" +
-      "  </C:filter>\n" +
-      "</C:calendar-query>";
+    const xml = `<?xml version="1.0" encoding="utf-8" ?>\n<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">\n  <D:prop>\n    <C:calendar-data/>\n  </D:prop>\n  <C:filter>\n    <C:comp-filter name="VCALENDAR">\n      <C:comp-filter name="VEVENT">\n        <C:time-range start="${startDateString}"${endTimeRange}/>\n      </C:comp-filter>\n    </C:comp-filter>\n  </C:filter>\n</C:calendar-query>`;
     const depth = "1";
     const method = "REPORT";
     return this.sendRequest(calendarUrl, username, password, xml, method, depth, true);
@@ -113,12 +100,7 @@ export class CalDAVService {
     return this.sendRequest(calendarUrl, username, password, xml, method, depth);
   }
 
-  calendarMultiget(
-    calendarUrl: string,
-    username: string,
-    password: string,
-    eventPaths: string[],
-  ) {
+  calendarMultiget(calendarUrl: string, username: string, password: string, eventPaths: string[]) {
     let hrefString = "";
     eventPaths.forEach((value) => {
       hrefString += `<d:href>${value}</d:href> `;
@@ -160,13 +142,7 @@ export class CalDAVService {
     if (typeof event.iCalendarData !== "undefined") {
       body = event.iCalendarData;
     } else {
-      body =
-        "BEGIN:VCALENDAR\n" +
-        "BEGIN:VEVENT\n" +
-        `UID:${event.uid}\n` +
-        `LOCATION:${event.location ? event.location : ""}\n` +
-        `DESCRIPTION:${event.description ? event.description : ""}\n` +
-        `SUMMARY:${event.summary}\n`;
+      body = `BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:${event.uid}\nLOCATION:${event.location ? event.location : ""}\nDESCRIPTION:${event.description ? event.description : ""}\nSUMMARY:${event.summary}\n`;
 
       let _startDateBody: string;
       let _endDateBody: string;
@@ -183,7 +159,7 @@ export class CalDAVService {
         _endDateBody = `DTEND;TZID=${event.tzid}:${formatDateForIcal(event.endDate, "dateTime")}\n`;
       }
 
-      body += `${_startDateBody + _endDateBody}END:VEVENT\n` + "END:VCALENDAR\n\n";
+      body += `${_startDateBody + _endDateBody}END:VEVENT\nEND:VCALENDAR\n\n`;
     }
 
     const depth = "1";
@@ -197,8 +173,8 @@ export class CalDAVService {
     xml: string,
     method: string,
     depth: string | null,
-    isQuery: boolean = false,
-    eventUid: string = "",
+    isQuery = false,
+    eventUid = "",
   ): Promise<CalendarEvent[] | string> {
     return new Promise((resolve, reject) => {
       const urlparts = /(https?):\/\/(.*?):?(\d*)?(\/.*\/?)/gi.exec(calendarUrl);
@@ -266,18 +242,15 @@ export class CalDAVService {
               if (err) {
                 throw err;
               }
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const multistatus = result["multistatus"] as any;
-              const data = multistatus?.["response"];
+              const multistatus = result.multistatus as any;
+              const data = multistatus?.response;
               // For non-iCloud WebCalDAV servers, the response is different
               // and the data may be accessed using
               // `result['d:multistatus']['d:response']` instead.
               const resultEvents: CalendarEvent[] = [];
               if (data) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 data.forEach((eventData: any) => {
-                  const iCalendarData =
-                    eventData["propstat"][0]["prop"][0]["calendar-data"][0];
+                  const iCalendarData = eventData.propstat[0].prop[0]["calendar-data"][0];
                   const calendarEvent = this.parseToCalendarEvent(iCalendarData._);
                   // When accessing the data with `result['multistatus']['response']`
                   // for iCloud, `iCalendarData._` must be passed instead of
@@ -359,9 +332,7 @@ class RecurrenceIterator {
   /**
    * An iterator of recurrent events. It uses getOccurrenceDetails to correctly handle exceptions.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _event: any = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _iter: any = null;
 
   public constructor(event: ICAL.Event) {
