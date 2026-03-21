@@ -42,7 +42,7 @@ const events = {
   }
 };
 
-export function GetGCal(fixture: 'common'): GCalEvent {
+export function GetGCal(_fixture: 'common'): GCalEvent {
   return JSON.parse(JSON.stringify(events.gCal.common));
 };
 

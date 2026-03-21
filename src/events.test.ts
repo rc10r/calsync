@@ -14,7 +14,7 @@ describe('isCalDAVEvent', () => {
 describe('compareEventsData', () => {
 
   function fixture(scenario: 'date' | 'datetime'): events.CalendarEventData {
-    let data: events.CalendarEventData = {
+    const data: events.CalendarEventData = {
       summary: 'summary',
       start: {},
       end: {},

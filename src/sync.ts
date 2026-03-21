@@ -25,13 +25,10 @@ export type SyncToGCalInstructions = {
  *   - Makes a map of both sourcesEvents and targetEvents on UID key
  *   - Returns a `SyncInstructions` object where the events in
  *     insert/update/delete array properties are objects in `sourcesEvents`.
- *
- * @param sourcesEvents
- * @param targetEvents
  */
 export function toGCal(
-  sourcesEvents: { event: CalendarEvent; redactedSummary: string }[],
-  targetEvents: GCalEvent[]
+  sourcesEvents: { event: CalendarEvent; redactedSummary: string | undefined }[],
+  targetEvents: GCalEvent[],
 ): SyncToGCalInstructions {
   const eventsInsert: CalendarEventData[] = [];
   const eventsUpdate: { eventId: string; eventData: CalendarEventData }[] = [];
@@ -42,8 +39,9 @@ export function toGCal(
   for (const srcEvt of sourcesEvents) {
     const srcEvtData = extractEventData(srcEvt.event);
     const matchingId = (() => {
-      if (isGCalEvent(srcEvt.event)) return srcEvt.event.id;
+      if (isGCalEvent(srcEvt.event)) return srcEvt.event.id ?? "";
       if (isCalDAVEvent(srcEvt.event)) return srcEvt.event.uid;
+      return "";
     })();
 
     // Search matching event in targetEvents
@@ -55,13 +53,15 @@ export function toGCal(
       return undefined;
     })();
 
-    srcEvtData.description = (srcEvtData.description || '') + `\nOriginal ID: ${matchingId}\n${calsyncFingerprint}`;
+    srcEvtData.description =
+      (srcEvtData.description || "") +
+      `\nOriginal ID: ${matchingId}\n${calsyncFingerprint}`;
 
     // Ignoring events not to be copied
     if (
       !ShouldCopy(
         srcEvtData.summary,
-        !!srcEvtData.transparency && srcEvtData.transparency === "transparent"
+        !!srcEvtData.transparency && srcEvtData.transparency === "transparent",
       )
     )
       continue;
@@ -72,14 +72,13 @@ export function toGCal(
       eventsInsert.push(srcEvtData);
     } else {
       // Match on ID -> update or do nothing
-      markedTargetEventIds.push(matchingTargetEvt.id);
+      const targetId = matchingTargetEvt.id ?? "";
+      markedTargetEventIds.push(targetId);
 
-      if (
-        !compareEventsData(extractGCalEventData(matchingTargetEvt), srcEvtData)
-      ) {
+      if (!compareEventsData(extractGCalEventData(matchingTargetEvt), srcEvtData)) {
         // Not matching on content -> update
         eventsUpdate.push({
-          eventId: matchingTargetEvt.id,
+          eventId: targetId,
           eventData: srcEvtData,
         });
       }
@@ -87,14 +86,15 @@ export function toGCal(
   }
 
   for (const targetEvt of targetEvents) {
+    const targetId = targetEvt.id ?? "";
     if (
       targetEvt.description &&
       targetEvt.description.includes(calsyncFingerprint) &&
-      !markedTargetEventIds.includes(targetEvt.id)
+      !markedTargetEventIds.includes(targetId)
     ) {
       // Deleting events which have the calsync fingerprint and have
       // not been marked (not matched with a source event).
-      eventsDelete.push(targetEvt.id);
+      eventsDelete.push(targetId);
     }
   }
 

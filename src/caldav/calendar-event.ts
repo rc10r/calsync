@@ -57,6 +57,7 @@ export interface CalendarEvent {
     attendees?: string[] | string[][];
 
     isRecurring?: boolean;
-    recurrenceId?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recurrenceId?: any;
     recurrenceIterator?: any;
 }
