@@ -30,7 +30,13 @@ export type SyncToGCalInstructions = {
  * @param targetEvents
  */
 export function toGCal(
-  sourcesEvents: { event: CalendarEvent; redactedSummary: string }[],
+  sourcesEvents: {
+    event: CalendarEvent;
+    redactedSummary?: string;
+    visibility?: "private";
+    showAs?: "free" | "busy";
+    colorId?: string;
+  }[],
   targetEvents: GCalEvent[]
 ): SyncToGCalInstructions {
   const eventsInsert: CalendarEventData[] = [];
@@ -55,7 +61,14 @@ export function toGCal(
       return undefined;
     })();
 
-    srcEvtData.description = (srcEvtData.description || '') + `\nOriginal ID: ${matchingId}\n${calsyncFingerprint}`;
+    const isPrivate = srcEvt.visibility === "private";
+
+    // In private mode, the original description is kept (with calsync's
+    // bookkeeping appended). Otherwise, the description is dropped entirely
+    // so it doesn't leak alongside the redacted summary.
+    srcEvtData.description = isPrivate
+      ? (srcEvtData.description || '') + `\nOriginal ID: ${matchingId}\n${calsyncFingerprint}`
+      : `Original ID: ${matchingId}\n${calsyncFingerprint}`;
 
     // Ignoring events not to be copied
     if (
@@ -65,7 +78,22 @@ export function toGCal(
       )
     )
       continue;
-    srcEvtData.summary = NewSummary(srcEvtData.summary, srcEvt.redactedSummary);
+
+    if (isPrivate) {
+      srcEvtData.visibility = "private";
+    } else {
+      srcEvtData.summary = NewSummary(srcEvtData.summary, srcEvt.redactedSummary);
+    }
+
+    // Overrides the copied event's free/busy status, regardless of what it
+    // was on the source event.
+    if (srcEvt.showAs) {
+      srcEvtData.transparency = srcEvt.showAs === "free" ? "transparent" : "opaque";
+    }
+
+    if (srcEvt.colorId) {
+      srcEvtData.colorId = srcEvt.colorId;
+    }
 
     if (!matchingTargetEvt) {
       // No match on ID -> insert

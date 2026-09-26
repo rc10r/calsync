@@ -71,6 +71,85 @@ describe("ToGCal", () => {
     });
   });
 
+  test("description is dropped and replaced by the fingerprint when redacting", () => {
+    const commonEvent = fixtures.GetGCal("common");
+    const sourcesEvents = [
+      { event: commonEvent, redactedSummary: "redacted" },
+    ];
+    const targetEvents = [];
+    const expectedInsertEventData = mapEventToDataWithDescription(commonEvent);
+    expectedInsertEventData.summary = "redacted";
+
+    expect(sync.toGCal(sourcesEvents, targetEvents)).toStrictEqual({
+      insert: [expectedInsertEventData],
+      update: [],
+      delete: [],
+    });
+  });
+
+  test("private mode keeps the summary and description untouched and marks the event private", () => {
+    const commonEvent = fixtures.GetGCal("common");
+    const sourcesEvents = [
+      {
+        event: commonEvent,
+        redactedSummary: "should be ignored",
+        visibility: "private" as const,
+      },
+    ];
+    const targetEvents = [];
+    const expectedInsertEventData = extractGCalEventData(commonEvent);
+    expectedInsertEventData.description = `${commonEvent.description}\nOriginal ID: ${commonEvent.id}\n${calsyncFingerprint}`;
+    expectedInsertEventData.visibility = "private";
+
+    expect(sync.toGCal(sourcesEvents, targetEvents)).toStrictEqual({
+      insert: [expectedInsertEventData],
+      update: [],
+      delete: [],
+    });
+  });
+
+  test("showAs 'free' forces transparency regardless of the source's own transparency", () => {
+    const sourcesEvents = [
+      {
+        event: fixtures.GetCalDAV("nonTransparent"),
+        redactedSummary: undefined,
+        showAs: "free" as const,
+      },
+    ];
+    const targetEvents = [];
+    const expectedInsertEventData = mapEventToDataWithDescription(
+      fixtures.GetCalDAV("nonTransparent")
+    );
+    expectedInsertEventData.transparency = "transparent";
+
+    expect(sync.toGCal(sourcesEvents, targetEvents)).toStrictEqual({
+      insert: [expectedInsertEventData],
+      update: [],
+      delete: [],
+    });
+  });
+
+  test("colorId sets the copied event's color", () => {
+    const sourcesEvents = [
+      {
+        event: fixtures.GetCalDAV("nonTransparent"),
+        redactedSummary: undefined,
+        colorId: "8",
+      },
+    ];
+    const targetEvents = [];
+    const expectedInsertEventData = mapEventToDataWithDescription(
+      fixtures.GetCalDAV("nonTransparent")
+    );
+    expectedInsertEventData.colorId = "8";
+
+    expect(sync.toGCal(sourcesEvents, targetEvents)).toStrictEqual({
+      insert: [expectedInsertEventData],
+      update: [],
+      delete: [],
+    });
+  });
+
   test("empty sources and target", () => {
     const sourcesEvents = [];
     const targetEvents = [];

@@ -15,6 +15,8 @@ export type CalendarEventData = {
   start: { date?: string, dateTime?: string },
   end: { date?: string, dateTime?: string },
   transparency?: string,
+  visibility?: string,
+  colorId?: string,
 }
 
 export const isCalDAVEvent = (e: any): e is CalDAVEvent => !!e.uid;
@@ -38,6 +40,8 @@ export function extractGCalEventData(evt: GCalEvent): CalendarEventData {
     end: {},
     transparency: evt.transparency,
     description: evt.description,
+    visibility: evt.visibility,
+    colorId: evt.colorId,
   };
   if (evt.start && evt.start.date) data.start.date = evt.start.date;
   if (evt.start && evt.start.dateTime) data.start.dateTime = evt.start.dateTime;
@@ -70,7 +74,9 @@ export function eventDataToGCalEvent(d: CalendarEventData): GCalEvent {
     summary: d.summary,
     start: d.start,
     end: d.end,
-    transparency: d.transparency
+    transparency: d.transparency,
+    visibility: d.visibility,
+    colorId: d.colorId
   };
   return newEvt;
 }
@@ -85,6 +91,8 @@ export function compareEventsData(evtA: CalendarEventData, evtB: CalendarEventDa
   if (evtA.end.dateTime && Date.parse(evtA.end.dateTime) !== Date.parse(evtB.end.dateTime)) return false;
   if (evtA.transparency !== evtB.transparency) return false;
   if (evtA.description !== evtB.description) return false;
+  if (evtA.visibility !== evtB.visibility) return false;
+  if (evtA.colorId !== evtB.colorId) return false;
 
   return true;
 }
