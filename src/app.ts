@@ -17,6 +17,9 @@ async function main() {
 	const sourcesEvents: {
 		event: CalendarEvent;
 		redactedSummary: string | undefined;
+		visibility: "private" | undefined;
+		showAs: "free" | "busy" | undefined;
+		colorId: string | undefined;
 	}[] = [];
 	for (const source of config.sources) {
 		const fetchedEvents =
@@ -37,12 +40,14 @@ async function main() {
 					sourcesEvents.push({
 						event: event,
 						redactedSummary: source.redactedSummary,
+						visibility: source.visibility,
+						showAs: source.showAs,
+						colorId: source.colorId,
 					});
 				}
 				const it = event.recurrenceIterator;
-				let nextOccurrence: unknown;
-				nextOccurrence = it.next();
-				while (nextOccurrence) {
+				let nextOccurrence: any;
+				while ((nextOccurrence = it.next())) {
 					const nextOccurrenceStartDate = nextOccurrence.startDate.toJSDate();
 
 					// Ignoring occurrences which are before the range and
@@ -60,19 +65,24 @@ async function main() {
 					sourcesEvents.push({
 						event: nextOccurrenceEvent,
 						redactedSummary: source.redactedSummary,
+						visibility: source.visibility,
+						showAs: source.showAs,
+						colorId: source.colorId,
 					});
-					nextOccurrence = it.next();
 				}
 				// We skip the push below since we only want to push
 				// the instances within the selected period for CalDAV
 				// recurrent events. The CalDAV API returns the initial
 				// event (which may be before the fetched period) if
 				// some instances are within the fetched period.
-				return;
+				continue;
 			}
 			sourcesEvents.push({
 				event,
 				redactedSummary: source.redactedSummary,
+				visibility: source.visibility,
+				showAs: source.showAs,
+				colorId: source.colorId,
 			});
 		}
 	}

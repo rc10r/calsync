@@ -93,4 +93,20 @@ describe('compareEventsData', () => {
       events.compareEventsData(fixture('date'), evt)
     ).toEqual(false);
   });
+
+  test('different visibility', () => {
+    const evt = fixture('date');
+    evt.visibility = 'private';
+    expect(
+      events.compareEventsData(fixture('date'), evt)
+    ).toEqual(false);
+  });
+
+  test('different colorId', () => {
+    const evt = fixture('date');
+    evt.colorId = '8';
+    expect(
+      events.compareEventsData(fixture('date'), evt)
+    ).toEqual(false);
+  });
 });
