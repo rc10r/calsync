@@ -241,8 +241,9 @@ An iCloud account typically also exposes `inbox`/`outbox` (scheduling) and
 
 ## Namespaces, prefixes, and why the parsing broke
 
-This is the part `src/caldav/caldav.service.ts` currently works around, and it's
-worth getting right.
+This is the part `src/caldav/caldav.service.ts` used to work around one server at
+a time. It is now fixed — see [Fixes](#fixes) — but the reasoning is worth
+keeping, because the symptom is easy to misdiagnose as a server bug.
 
 ### The rule
 
@@ -281,8 +282,10 @@ result['d:multistatus']['d:response']   // works on a prefixed server, fails on 
 result['multistatus']['response']       // works on iCloud, fails on a prefixed server
 ```
 
-The current code hardcodes the second, which is why the README warns that the
-iCloud fix (commit `7c18c75`) may have broken other CalDAV servers. It did.
+The code used to hardcode one or the other, which is why the README warned that
+the iCloud fix (commit `7c18c75`) may have broken other CalDAV servers. It did:
+that commit swapped the first spelling for the second rather than removing the
+dependency on the prefix.
 
 **Failure 2 — the node type changes with where `xmlns` is declared.**
 
@@ -302,6 +305,14 @@ That is exactly why the code has to pass `iCalendarData._` rather than
 `iCalendarData`, and why doing so breaks the other server shape.
 
 ### Fixes
+
+**What calsync does now.** `sendRequest` parses with
+`MULTISTATUS_PARSE_OPTIONS` (`tagNameProcessors: [stripPrefix]` plus
+`xmlns: true`) and pulls the payload out via `extractCalendarData`, which finds
+the `propstat` actually holding `calendar-data`, checks its namespace, and
+returns null for responses that carry none. `caldav.service.test.ts` asserts the
+three prefix spellings below all parse identically. The rest of this section
+explains why those two options, and not one of them, are the answer.
 
 **Minimal — normalise the tag names.** xml2js ships a `stripPrefix` tag-name
 processor. It drops the prefix so both server shapes land on the same key:

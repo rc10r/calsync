@@ -6,6 +6,59 @@ import ICAL from 'ical.js';
 import { CalendarEvent } from './calendar-event';
 import { CalendarEventDuration } from './calendar-event-duration';
 
+const CALDAV_NS = 'urn:ietf:params:xml:ns:caldav';
+
+/**
+ * Options making the multistatus parsing independent of the XML namespace
+ * prefixes the server happens to use.
+ *
+ * A namespace prefix is arbitrary and local to the document declaring it, so
+ * a response's prefixes bear no relation to the ones we send in the query:
+ * iCloud answers with a default `xmlns="DAV:"` (no prefix at all), others with
+ * `d:`/`c:`. xml2js is namespace-unaware and keys the result by the literal tag
+ * name, so without these options the access path has to be hardcoded to one
+ * server's spelling — which is what used to break iCloud and non-iCloud
+ * servers alternately.
+ *
+ * - `stripPrefix` drops the prefix, so `d:multistatus` and `multistatus`
+ *   collapse onto the same key.
+ * - `xmlns: true` records each node's resolved namespace as `$ns` and wraps
+ *   every node uniformly as `{ _, $ns }`, regardless of where `xmlns` was
+ *   declared. It also restores the namespace information `stripPrefix` throws
+ *   away, so a property can be checked for the namespace it belongs to.
+ *
+ * See docs/caldav-discovery.md for the full explanation and captured responses.
+ */
+export const MULTISTATUS_PARSE_OPTIONS: xml2js.OptionsV2 = {
+    tagNameProcessors: [xml2js.processors.stripPrefix],
+    xmlns: true,
+};
+
+/**
+ * Pull the iCalendar payload out of a single multistatus `<response>`.
+ *
+ * A 207 may carry several `<propstat>` blocks, mixing successful and
+ * unsuccessful ones for the same resource, so the block holding `calendar-data`
+ * is not necessarily the first. Returns null when the response carries none.
+ */
+export function extractCalendarData(eventData: any): string | null {
+    const propstats = eventData['propstat'] || [];
+    for (const propstat of propstats) {
+        const node = propstat['prop']?.[0]?.['calendar-data']?.[0];
+        if (!node) {
+            continue;
+        }
+        if (node.$ns && node.$ns.uri !== CALDAV_NS) {
+            continue;
+        }
+        // With `xmlns: true` every node is wrapped as `{ _, $ns }`; the `_`
+        // holds the text. Fall back to the node itself in case it is a
+        // bare string.
+        return typeof node === 'object' ? node._ : node;
+    }
+    return null;
+}
+
 export class CalDAVService {
     private static readonly singelton = new CalDAVService();
 
@@ -217,29 +270,20 @@ export class CalDAVService {
 
                 try {
                     if (isQuery) {
-                        parseString(response, (err, result) => {
+                        parseString(response, MULTISTATUS_PARSE_OPTIONS, (err, result) => {
                             if (err) {
                                 throw err;
                             }
-                            const data = result['multistatus']['response']
-                            // For non-iCloud WebCalDAV servers, the response is different
-                            // and the data may be accessed using
-                            // `result['d:multistatus']['d:response']` instead.
-                            // This is because xml2js is namespace-unaware and keys on the
-                            // literal tag name, so the server's choice of prefix leaks in.
-                            // See docs/caldav-discovery.md for why, and for the
-                            // `tagNameProcessors: [stripPrefix]` fix that handles both.
+                            const data = result['multistatus']['response'];
                             const resultEvents: CalendarEvent[] = [];
                             if (data) {
                                 data.forEach((eventData: any) => {
-                                    const iCalendarData = eventData['propstat'][0]['prop'][0]['calendar-data'][0];
-                                    const calendarEvent = this.parseToCalendarEvent(iCalendarData._);
-                                    // When accessing the data with `result['multistatus']['response']`
-                                    // for iCloud, `iCalendarData._` must be passed instead of 
-                                    // just `iCalendarData` to avoid a parser error.
-                                    resultEvents.push(calendarEvent);
-                                })
-                                    ;
+                                    const iCalendarData = extractCalendarData(eventData);
+                                    if (!iCalendarData) {
+                                        return; // no calendar-data on this response, skip it
+                                    }
+                                    resultEvents.push(this.parseToCalendarEvent(iCalendarData));
+                                });
                             }
                             resolve(resultEvents);
                         });

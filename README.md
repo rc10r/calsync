@@ -51,7 +51,7 @@ This means you **MUST NOT** use your mirroring target for anything else than pro
 
 NB: you have to find the URL by hand because calsync implements no CalDAV discovery — it talks to the single calendar collection you configure. [`docs/caldav-discovery.md`](docs/caldav-discovery.md) documents the protocol sequence (`.well-known` → `current-user-principal` → `calendar-home-set` → `PROPFIND Depth: 1`) that would let calsync enumerate calendars from just a hostname, with real iCloud requests and responses.
 
-NB: the code has been adjusted to work with iCloud (commit `7c18c75481e85d8eb034babee28862b9a9d06514`). This may have broken compatibility with other CalDAV servers, so you may want to check the commit's change to restore it if you need to. The [namespaces section](docs/caldav-discovery.md#namespaces-prefixes-and-why-the-parsing-broke) of the discovery doc explains why that commit is server-specific — calsync's XML parsing is namespace-unaware and keys on the server's chosen prefix — and gives the fix that works with both iCloud and prefixed servers.
+NB: the code was once adjusted to work with iCloud specifically (commit `7c18c75481e85d8eb034babee28862b9a9d06514`), which broke compatibility with other CalDAV servers. That is fixed: the XML parsing no longer depends on the namespace prefixes a server happens to use, so iCloud and prefix-using servers both work. The [namespaces section](docs/caldav-discovery.md#namespaces-prefixes-and-why-the-parsing-broke) of the discovery doc explains the underlying issue.
 
 **Google Calendar calendars**
 
