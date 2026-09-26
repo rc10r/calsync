@@ -49,7 +49,9 @@ This means you **MUST NOT** use your mirroring target for anything else than pro
 - You will have to find the Calendar URL. You may look at [these instructions](https://help.runbox.com/using-a-calendar-client-with-caldav/) from Runbox on how to connect Thunderbird Lightning to a CalDAV server, you'll have to do the same to find the calendar's URL (in short, navigate in your browser to [](caldav.<replace-with-your-hosting-domain.com>)).
 - You will have to add in the `config.ts` file your CalDAV account credentials. This will probably be your username and password.
 
-NB: the code has been adjusted to work with iCloud (commit `7c18c75481e85d8eb034babee28862b9a9d06514`). This may have broken compatibility with other CalDAV servers, so you may want to check the commit's change to restore it if you need to.
+NB: you have to find the URL by hand because calsync implements no CalDAV discovery — it talks to the single calendar collection you configure. [`docs/caldav-discovery.md`](docs/caldav-discovery.md) documents the protocol sequence (`.well-known` → `current-user-principal` → `calendar-home-set` → `PROPFIND Depth: 1`) that would let calsync enumerate calendars from just a hostname, with real iCloud requests and responses.
+
+NB: the code has been adjusted to work with iCloud (commit `7c18c75481e85d8eb034babee28862b9a9d06514`). This may have broken compatibility with other CalDAV servers, so you may want to check the commit's change to restore it if you need to. The [namespaces section](docs/caldav-discovery.md#namespaces-prefixes-and-why-the-parsing-broke) of the discovery doc explains why that commit is server-specific — calsync's XML parsing is namespace-unaware and keys on the server's chosen prefix — and gives the fix that works with both iCloud and prefixed servers.
 
 **Google Calendar calendars**
 

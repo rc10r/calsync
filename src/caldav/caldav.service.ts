@@ -223,8 +223,12 @@ export class CalDAVService {
                             }
                             const data = result['multistatus']['response']
                             // For non-iCloud WebCalDAV servers, the response is different
-                            // and the data may be accessed using 
+                            // and the data may be accessed using
                             // `result['d:multistatus']['d:response']` instead.
+                            // This is because xml2js is namespace-unaware and keys on the
+                            // literal tag name, so the server's choice of prefix leaks in.
+                            // See docs/caldav-discovery.md for why, and for the
+                            // `tagNameProcessors: [stripPrefix]` fix that handles both.
                             const resultEvents: CalendarEvent[] = [];
                             if (data) {
                                 data.forEach((eventData: any) => {
